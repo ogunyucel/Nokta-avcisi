@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nokta Avcısı 🎯</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; margin: 0; background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%); 
+        }
+        .container { 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4); 
+            text-align: center; 
+            width: fit-content; 
+            min-width: 350px;   
+            max-width: 95vw;    
+        }
+        h1 { color: #2c3e50; margin-bottom: 20px; font-size: 32px;}
+        
+        button { 
+            padding: 12px 25px; font-size: 18px; font-weight: bold; border: none; 
+            border-radius: 10px; cursor: pointer; transition: 0.3s; margin: 10px;
+        }
+        .btn-primary { background-color: #e67e22; color: white; width: 100%; font-size: 22px; padding: 15px;}
+        .btn-primary:hover { background-color: #d35400; transform: scale(1.05); }
+        
+        .level-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .btn-level { background-color: #34495e; color: white; padding: 15px 0; font-size: 20px; }
+        .btn-level:hover { background-color: #2c3e50; transform: translateY(-3px); }
+        
+        .options { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; width: 100%; }
+        .btn-option { 
+            background-color: #f1f1f1; color: #2c3e50; border: 2px solid #ddd; 
+            flex: 1; margin: 0; padding: 10px 2px; height: 60px; font-size: 26px; white-space: nowrap;
+        }
+        .btn-option:hover { background-color: #e2e2e2; }
+        
+        .correct { background-color: #2ecc71 !important; color: white !important; border-color: #27ae60 !important; }
+        .wrong { background-color: #e74c3c !important; color: white !important; border-color: #c0392b !important; }
+        
+        .hidden { display: none !important; }
+
+        #score-board { margin-bottom: 15px; background: #ecf0f1; padding: 10px; border-radius: 10px; border: 1px solid #bdc3c7; }
+        .main-stats { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 8px; }
+        .sub-stats { font-size: 16px; font-weight: bold; }
+        .text-correct { color: #27ae60; }
+        .text-wrong { color: #c0392b; }
+
+        /* --- SİMETRİK MATRİS VE PARANTEZ TASARIMI --- */
+        .matrix-wrapper {
+           display: flex;
+            justify-content: center;
+            align-items: center; 
+            margin: 20px 0;
+            padding-right: 80px; 
+            padding-left: 80px;  
+            padding-bottom: 50px; 
+            min-height: 200px; 
+        }
+
+        .matrix-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        #dot-container {
+           display: grid;
+            justify-content: center; 
+            justify-items: center; 
+            gap: 6px 8px;
+        }
+        
+        .dot {
+            width: 18px;
+            height: 18px;
+            background-color: #f1c40f; 
+            border-radius: 50%;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            border: 2px solid #f39c12;
+            animation: popIn 0.3s ease-out forwards;
+            transform: scale(0);
+        }
+
+        .bracket-right {
+            position: absolute; right: -25px; top: 0; bottom: 0;
+            border-top: 2px solid #34495e; border-bottom: 2px solid #34495e; border-right: 2px solid #34495e;
+            width: 10px; display: flex; align-items: center;
+        }
+        #row-label { 
+            position: absolute; left: 18px; font-weight: bold; font-size: 18px; color: #34495e; white-space: nowrap; 
+            animation: fadeIn 0.5s ease-out forwards; opacity: 0;
+        }
+
+        .bracket-bottom {
+           position: absolute; bottom: -25px; left: 0; right: 0; 
+            border-left: 2px solid #34495e; border-right: 2px solid #34495e; border-bottom: 2px solid #34495e;
+            height: 10px; display: flex; justify-content: center;
+        }
+        #col-label { 
+            position: absolute; top: 15px; font-weight: bold; font-size: 18px; color: #34495e; white-space: nowrap; 
+            animation: fadeIn 0.5s ease-out forwards; opacity: 0;
+        }
+
+        @keyframes popIn { to { transform: scale(1); } }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        #message { height: 24px; font-weight: bold; margin-top: 15px; color: #555; }
+    </style>
+</head>
+<body>
+
+<div id="start-screen" class="container">
+    <h1>🎯 Nokta Avcısı</h1>
+    <p>Matris alanındaki noktaların<br>toplamını hızlıca hesapla!</p>
+    <button class="btn-primary" onclick="showScreen('level-screen')">Oyuna Başla</button>
+</div>
+
+<div id="level-screen" class="container hidden">
+    <h1>Seviye Seç</h1>
+    <p>Hangi seviyeden başlamak istersin?</p>
+    <div class="level-grid" id="levels"></div>
+    <button style="margin-top: 20px; background: #7f8c8d; color: white; width: 100%;" onclick="showScreen('start-screen')">Geri Dön</button>
+</div>
+
+<div id="game-screen" class="container hidden">
+    <div id="score-board">
+        <div class="main-stats">Skor: <span id="score">0</span> | Seviye: <span id="current-level-text">1</span></div>
+        <div class="sub-stats">
+            <span class="text-correct">✔️ <span id="correct-count">0</span></span> | 
+            <span class="text-wrong">❌ <span id="wrong-count">0</span></span>
+        </div>
+    </div>
+
+    <div class="matrix-wrapper">
+        <div class="matrix-container" id="matrix-box">
+            <div id="dot-container"></div>
+            
+            <div class="bracket-right">
+                <span id="row-label">-- tane</span>
+            </div>
+            
+            <div class="bracket-bottom">
+                <span id="col-label">-- tane</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="options">
+        <button id="opt1" class="btn-option" onclick="checkAnswer(this)"></button>
+        <button id="opt2" class="btn-option" onclick="checkAnswer(this)"></button>
+    </div>
+    <p id="message"></p>
+    <button style="margin-top: 20px; background: #e74c3c; color: white; width: 100%;" onclick="endGame()">Oyunu Bitir</button>
+</div>
+
+<script>
+    let currentLevel = 1; 
+    let correctAnswerText = ""; 
+    let score = 0;
+    let correctCount = 0; 
+    let wrongCount = 0;   
+    let isClickable = true; 
+
+    function showScreen(screenId) {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('level-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    function generateLevelButtons() {
+        const levelsDiv = document.getElementById('levels');
+        for (let i = 1; i <= 9; i++) {
+            let btn = document.createElement('button');
+            btn.innerText = i;
+            btn.className = "btn-level";
+            btn.onclick = () => startLevel(i);
+            levelsDiv.appendChild(btn);
+        }
+    }
+    generateLevelButtons(); 
+
+    function startLevel(level) {
+        currentLevel = level; 
+        score = 0;
+        correctCount = 0; 
+        wrongCount = 0;   
+        
+        updateScore();
+        document.getElementById('current-level-text').innerText = level;
+        showScreen('game-screen');
+        askQuestion();
+    }
+
+    function askQuestion() {
+        isClickable = true;
+        document.getElementById("message").innerText = "";
+        
+        const btn1 = document.getElementById("opt1");
+        const btn2 = document.getElementById("opt2");
+        btn1.className = "btn-option"; 
+        btn2.className = "btn-option";
+
+        const randomRows = Math.floor(Math.random() * 10) + 1;
+        const targetResult = currentLevel * randomRows;
+        correctAnswerText = targetResult.toString();
+        
+        const dotContainer = document.getElementById("dot-container");
+        dotContainer.innerHTML = ""; 
+        
+        dotContainer.style.gridTemplateColumns = `repeat(${currentLevel}, auto)`;
+        
+        for(let i = 0; i < targetResult; i++) {
+            let dot = document.createElement('div');
+            dot.className = "dot";
+            dot.style.animationDelay = `${(i * 0.01)}s`; 
+            dotContainer.appendChild(dot);
+        }
+
+        const rowLabel = document.getElementById("row-label");
+        const colLabel = document.getElementById("col-label");
+        
+        rowLabel.style.animation = 'none';
+        colLabel.style.animation = 'none';
+        rowLabel.offsetHeight; 
+        
+        rowLabel.innerText = `${randomRows} tane`;
+        colLabel.innerText = `${currentLevel} tane`;
+        
+        rowLabel.style.animation = `fadeIn 0.5s ease-out ${(targetResult * 0.01) + 0.1}s forwards`;
+        colLabel.style.animation = `fadeIn 0.5s ease-out ${(targetResult * 0.01) + 0.1}s forwards`;
+
+        let fakeRows;
+        if (randomRows === 10) {
+            fakeRows = 9;
+        } else if (randomRows === 1) {
+            fakeRows = 2;
+        } else {
+            fakeRows = randomRows + (Math.random() > 0.5 ? 1 : -1);
+        }
+        
+        let fakeAnswerText = (currentLevel * fakeRows).toString();
+
+        if (Math.random() > 0.5) {
+            btn1.innerText = correctAnswerText; 
+            btn2.innerText = fakeAnswerText;
+        } else {
+            btn1.innerText = fakeAnswerText; 
+            btn2.innerText = correctAnswerText;
+        }
+    }
+
+    function checkAnswer(btn) {
+        if (!isClickable) return; 
+        isClickable = false;
+
+        if (btn.innerText === correctAnswerText) {
+            btn.classList.add("correct");
+            document.getElementById("message").innerText = "Tam İsabet! 🎯";
+            document.getElementById("message").style.color = "#27ae60";
+            score += 10;
+            correctCount++; 
+            updateScore();
+            setTimeout(askQuestion, 1200); 
+        } else {
+            btn.classList.add("wrong");
+            document.getElementById("message").innerText = `Yanlış saydın! Doğrusu ${correctAnswerText}`;
+            document.getElementById("message").style.color = "#c0392b";
+            wrongCount++; 
+            updateScore();
+            setTimeout(askQuestion, 1800); 
+        }
+    }
+
+    function updateScore() {
+        document.getElementById('score').innerText = score;
+        document.getElementById('correct-count').innerText = correctCount;
+        document.getElementById('wrong-count').innerText = wrongCount;
+    }
+
+    function endGame() {
+        alert("Av Bitti!\n\nToplam Skorun: " + score + "\nDoğru Sayısı: " + correctCount + "\nYanlış Sayısı: " + wrongCount);
+        showScreen('level-screen'); 
+    }
+</script>
+</body>
+</html>
